@@ -5,7 +5,6 @@ HED=kb.h diseqc.h tune-s2.h
 OBJ=kb.o diseqc.o tune-s2.o
 
 BIND=/usr/local/bin/
-INCLUDE=-I../v4l-updatelee-mercurial/linux/include
 
 TARGET=tune-s2
 
