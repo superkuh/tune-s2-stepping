@@ -64,8 +64,8 @@ int check_frontend (int frontend_fd)
 		ber = -2;
 	if (ioctl(frontend_fd, FE_READ_UNCORRECTED_BLOCKS, &uncorrected_blocks) == -1)
 		uncorrected_blocks = -2;
-	printf ("status %02x | signal %3u%% | snr %3u%% | ber %d | unc %d | ",
-		status, (signal * 100) / 0xffff, (snr * 100) / 0xffff, ber, uncorrected_blocks);
+	printf ("status %s | signal %3u%% | snr %2.1f db | ber %d | unc %d | ",
+			(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", (signal * 100) / 0xffff, (snr / 2560.0), ber, uncorrected_blocks);
 	if (status & FE_HAS_LOCK)
 		printf("FE_HAS_LOCK \n");
 	printf("\n");
@@ -153,73 +153,67 @@ int tune(int frontend_fd, struct tune_p *t)
 			return;
 		}
 
-		if (status & FE_HAS_LOCK)
+		if (status & FE_HAS_LOCK || status & FE_TIMEDOUT)
 			break;
 		else
 			sleep(1);
 	}
 
-	if (status & FE_HAS_LOCK)
+	struct dtv_property p[] = {
+		{ .cmd = DTV_DELIVERY_SYSTEM },
+		{ .cmd = DTV_FREQUENCY },
+		{ .cmd = DTV_VOLTAGE },
+		{ .cmd = DTV_SYMBOL_RATE },
+		{ .cmd = DTV_TONE },
+		{ .cmd = DTV_MODULATION },
+		{ .cmd = DTV_INNER_FEC },
+		{ .cmd = DTV_INVERSION },
+		{ .cmd = DTV_ROLLOFF },
+		{ .cmd = DTV_BANDWIDTH_HZ },
+		{ .cmd = DTV_PILOT },
+		{ .cmd = DTV_DVBS2_MIS_ID }
+	};
+
+	struct dtv_properties p_status = {
+		.num = 12,
+		.props = p
+	};
+
+	// get the actual parameters from the driver for that channel
+	if ((ioctl(frontend_fd, FE_GET_PROPERTY, &p_status)) == -1) {
+		perror("FE_GET_PROPERTY failed");
+		return -1;
+	}
+
+	printf("Tuned specs: \n");
+	printf("System:     %s %d \n", value2name(p_status.props[0].u.data, dvb_system), p_status.props[0].u.data);
+	printf("Frequency:  %d %s %d \n", abs(p_status.props[1].u.data/1000 + t->LO), value2name(p_status.props[2].u.data, dvb_voltage) , p_status.props[3].u.data / 1000);
+	printf("22khz:      %s \n", value2name(p_status.props[4].u.data, dvb_tone));
+	printf("Modulation: %s %d \n", value2name(p_status.props[5].u.data, dvb_modulation), p_status.props[5].u.data);
+	printf("FEC:        %s %d \n", value2name(p_status.props[6].u.data, dvb_fec), p_status.props[6].u.data);
+	printf("Inversion:  %s %d \n", value2name(p_status.props[7].u.data, dvb_inversion), p_status.props[7].u.data);
+	printf("Rolloff:    %s %d \n", value2name(p_status.props[8].u.data, dvb_rolloff), p_status.props[8].u.data);
+	printf("Pilot:      %s %d \n", value2name(p_status.props[10].u.data, dvb_pilot), p_status.props[10].u.data);
+	printf("MIS:        %d \n\n", p_status.props[11].u.data);
+
+	char c;
+	do
 	{
-		struct dtv_property p[] = {
-			{ .cmd = DTV_DELIVERY_SYSTEM },
-			{ .cmd = DTV_FREQUENCY },
-			{ .cmd = DTV_VOLTAGE },
-			{ .cmd = DTV_SYMBOL_RATE },
-			{ .cmd = DTV_TONE },
-			{ .cmd = DTV_MODULATION },
-			{ .cmd = DTV_INNER_FEC },
-			{ .cmd = DTV_INVERSION },
-			{ .cmd = DTV_ROLLOFF },
-			{ .cmd = DTV_BANDWIDTH_HZ },
-			{ .cmd = DTV_PILOT },
-			{ .cmd = DTV_DVBS2_MIS_ID }
-		};
-
-		struct dtv_properties p_status = {
-			.num = 12,
-			.props = p
-		};
-
-		// get the actual parameters from the driver for that channel
-		if ((ioctl(frontend_fd, FE_GET_PROPERTY, &p_status)) == -1) {
-			perror("FE_GET_PROPERTY failed");
-			return -1;
-		}
-
-		printf("Tuned specs: \n");
-		printf("System:     %s %d \n", value2name(p_status.props[0].u.data, dvb_system), p_status.props[0].u.data);
-		printf("Frequency:  %d %s %d \n", abs(p_status.props[1].u.data/1000 + t->LO), value2name(p_status.props[2].u.data, dvb_voltage) , p_status.props[3].u.data / 1000);
-		printf("22khz:      %s \n", value2name(p_status.props[4].u.data, dvb_tone));
-		printf("Modulation: %s %d \n", value2name(p_status.props[5].u.data, dvb_modulation), p_status.props[5].u.data);
-		printf("FEC:        %s %d \n", value2name(p_status.props[6].u.data, dvb_fec), p_status.props[6].u.data);
-		printf("Inversion:  %s %d \n", value2name(p_status.props[7].u.data, dvb_inversion), p_status.props[7].u.data);
-		printf("Rolloff:    %s %d \n", value2name(p_status.props[8].u.data, dvb_rolloff), p_status.props[8].u.data);
-		printf("Pilot:      %s %d \n", value2name(p_status.props[10].u.data, dvb_pilot), p_status.props[10].u.data);
-		printf("MIS:        %d \n\n", p_status.props[11].u.data);
-
-		char c;
-		do
-		{
-			check_frontend(frontend_fd);
-			c = getch();
+		check_frontend(frontend_fd);
+		c = getch();
 //			sleep(1);
 //	                if ( kbhit() )
 //        	                c = kbgetchar(); /* consume the character */
-			switch ( c ) {
-				case 'e':
-					motor_dir(frontend_fd, 0);
-					break;
-				case 'w':
-					motor_dir(frontend_fd, 1);
-					break;
-			}
-		} while(c != 'q');
-		return 0;
-	} else {
-		printf(">>> tuning failed!!!\n");
-		return -1;
-	}
+		switch ( c ) {
+			case 'e':
+				motor_dir(frontend_fd, 0);
+				break;
+			case 'w':
+				motor_dir(frontend_fd, 1);
+				break;
+		}
+	} while(c != 'q');
+	return 0;
 }
 
 char *usage =
