@@ -117,7 +117,7 @@ int tune(int frontend_fd, struct tune_p *t)
 		.props = p_tune
 	};
 
-	printf("\nTuneing specs: \n");
+	printf("\nTuning specs: \n");
     printf("System:     %s \n", value2name(p_tune[0].u.data, dvb_system));
 	printf("Frequency:  %d %s %d \n", abs(p_tune[1].u.data/1000 + t->LO), value2name(p_tune[2].u.data, dvb_voltage) , p_tune[3].u.data / 1000);
 	printf("22khz:      %s \n", value2name(p_tune[4].u.data, dvb_tone));
@@ -185,16 +185,37 @@ int tune(int frontend_fd, struct tune_p *t)
 		return -1;
 	}
 
-	printf("Tuned specs: \n");
-	printf("System:     %s %d \n", value2name(p_status.props[0].u.data, dvb_system), p_status.props[0].u.data);
-	printf("Frequency:  %d %s %d \n", abs(p_status.props[1].u.data/1000 + t->LO), value2name(p_status.props[2].u.data, dvb_voltage) , p_status.props[3].u.data / 1000);
-	printf("22khz:      %s \n", value2name(p_status.props[4].u.data, dvb_tone));
-	printf("Modulation: %s %d \n", value2name(p_status.props[5].u.data, dvb_modulation), p_status.props[5].u.data);
-	printf("FEC:        %s %d \n", value2name(p_status.props[6].u.data, dvb_fec), p_status.props[6].u.data);
-	printf("Inversion:  %s %d \n", value2name(p_status.props[7].u.data, dvb_inversion), p_status.props[7].u.data);
-	printf("Rolloff:    %s %d \n", value2name(p_status.props[8].u.data, dvb_rolloff), p_status.props[8].u.data);
-	printf("Pilot:      %s %d \n", value2name(p_status.props[10].u.data, dvb_pilot), p_status.props[10].u.data);
-	printf("MIS:        %d \n\n", p_status.props[11].u.data);
+		int m,num,den;
+  		double fec_result;
+		double bw;
+		double dr;
+		if (p_status.props[5].u.data < 1) 
+			m = 2;
+		else if (p_status.props[5].u.data < 10)
+			m = 3;
+		else if (p_status.props[5].u.data < 11)
+			m = 4;
+		else
+			m = 5;
+		bw = (p_status.props[3].u.data) / 1000 * (1 + atof(value2name(p_status.props[8].u.data, dvb_rolloff))/100)/1000;
+		sscanf (value2name(p_status.props[6].u.data, dvb_fec), "%d/%d", &num, &den);
+		fec_result = ((float)num/den);
+		if (p_status.props[0].u.data < 6)
+			dr = ((p_status.props[3].u.data / 1000) * fec_result * 188/204 * m)/1000;	
+		else  
+			dr = ((p_status.props[3].u.data / 1000) * fec_result * 0.98 * m)/1000;	
+		printf("Tuned specs: \n");
+		printf("System:     %s %d \n", value2name(p_status.props[0].u.data, dvb_system), p_status.props[0].u.data);
+		printf("Frequency:  %d %s %d \n", abs(p_status.props[1].u.data/1000 + t->LO), value2name(p_status.props[2].u.data, dvb_voltage) , p_status.props[3].u.data / 1000);
+		printf("22khz:      %s \n", value2name(p_status.props[4].u.data, dvb_tone));
+		printf("Modulation: %s %d \n", value2name(p_status.props[5].u.data, dvb_modulation), p_status.props[5].u.data);
+		printf("FEC:        %s %d \n", value2name(p_status.props[6].u.data, dvb_fec), p_status.props[6].u.data);
+		printf("Inversion:  %s %d \n", value2name(p_status.props[7].u.data, dvb_inversion), p_status.props[7].u.data);
+		printf("Rolloff:    %s %d \n", value2name(p_status.props[8].u.data, dvb_rolloff), p_status.props[8].u.data);
+		printf("Pilot:      %s %d \n", value2name(p_status.props[10].u.data, dvb_pilot), p_status.props[10].u.data);
+		printf("MIS:        %d \n", p_status.props[11].u.data);
+  		printf("Bandwidth:  %3.4f MHz \n", bw);
+  		printf("Data Rate:  %3.4f Mbps \n\n", dr);
 
 	char c;
 	do
