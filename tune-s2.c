@@ -262,7 +262,9 @@ int tune(int frontend_fd, struct tune_p *t)
 		printf("FEC:        %s %d \n", value2name(p_status.props[6].u.data, dvb_fec), p_status.props[6].u.data);
 		printf("Inversion:  %s %d \n", value2name(p_status.props[7].u.data, dvb_inversion), p_status.props[7].u.data);
 		printf("Rolloff:    %s %d \n", value2name(p_status.props[8].u.data, dvb_rolloff), p_status.props[8].u.data);
-		printf("Pilot:      %s %d \n", value2name(p_status.props[10].u.data, dvb_pilot), p_status.props[10].u.data);
+		if(p_status.props[10].u.data)
+			printf("Pilot:      ON %d \n",p_status.props[10].u.data);
+		else	printf("Pilot:      OFF %d \n",p_status.props[10].u.data);
 		printf("MIS:        %d \n", p_status.props[11].u.data);
   		printf("Bandwidth:  %3.4f MHz \n", bw);
   		printf("Data Rate:  %3.4f Mbps \n\n", dr);
