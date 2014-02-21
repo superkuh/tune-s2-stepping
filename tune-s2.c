@@ -47,75 +47,25 @@ char * value2name(int value, struct options *table)
 int check_frontend (int frontend_fd)
 {
 	fe_status_t status;
+	uint16_t snr, signal;
 	uint32_t ber, uncorrected_blocks;
-	unsigned int ber_scale;
-	float snr;
-	unsigned int snr_scale;
-	float lvl;
-	unsigned int lvl_scale;
-	
-	if (ioctl(frontend_fd, FE_READ_STATUS, &status) == -1) {
-		perror("FE_READ_STATUS failed"); 
-	}
 
-	struct dtv_property p[13];
-	p[0].cmd = DTV_FREQUENCY;
-	p[1].cmd = DTV_DELIVERY_SYSTEM;
-	p[2].cmd = DTV_SYMBOL_RATE;
-	p[3].cmd = DTV_MODULATION;
-	p[4].cmd = DTV_INNER_FEC;
-	p[5].cmd = DTV_INVERSION;
-	p[6].cmd = DTV_ROLLOFF;
-	p[7].cmd = DTV_PILOT;
-	p[8].cmd = DTV_MATYPE;
-	p[9].cmd = DTV_STAT_SIGNAL_STRENGTH;
-	p[10].cmd = DTV_STAT_CNR;
-	p[11].cmd = DTV_STAT_POST_ERROR_BIT_COUNT;
-	p[12].cmd = DTV_STAT_POST_TOTAL_BIT_COUNT;
+	if (ioctl(frontend_fd, FE_READ_STATUS, &status) == -1)
+		perror("FE_READ_STATUS failed");
 
-	struct dtv_properties p_status;
-	p_status.num = 13;
-	p_status.props = p;
-
-	if (ioctl(frontend_fd, FE_GET_PROPERTY, &p_status) == -1) {
-		perror("FE_GET_PROPERTY failed");
-		return;
-	}
-		
-	lvl_scale = p_status.props[9].u.st.stat[0].scale;
-	if (lvl_scale == FE_SCALE_DECIBEL) {
-		lvl = p_status.props[9].u.st.stat[0].svalue * 0.0001;
-	} else {
-		int lvl;
-		if (ioctl(frontend_fd, FE_READ_SIGNAL_STRENGTH, &lvl) == -1) {
-			lvl = 0;
-		} else {
-			lvl = (lvl * 100) / 0xffff;
-			if (lvl < 0) {
-				lvl = 0;
-			}
-		}
-	}
-	snr_scale = p_status.props[10].u.st.stat[0].scale;
-	if (snr_scale == FE_SCALE_DECIBEL) {
-		snr = p_status.props[10].u.st.stat[0].svalue * .0001;
-	} else {
-		unsigned int snr = 0;
-		if (ioctl(frontend_fd, FE_READ_SNR, &snr) == -1) {
-			snr = 0;
-		}
-	}
-	ber_scale = p_status.props[11].u.st.stat[0].scale;
-	if (p_status.props[11].u.st.stat[0].scale == FE_SCALE_COUNTER && p_status.props[12].u.st.stat[0].scale == FE_SCALE_COUNTER) {
-        	ber = (p_status.props[12].u.st.stat[0].uvalue / (p_status.props[11].u.st.stat[0].uvalue * 1.0)) * 100;
-	} else {
-		ber = 0;
-		if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1) {
-			ber = 0;
-		}
-	}
-	printf ("status %02x | signal %2.1f dBm | snr %2.1f dB | ber %d | unc %d | ",
-		status, lvl, snr, ber, uncorrected_blocks);
+	/* some frontends might not support all these ioctls, thus we
+	 * avoid printing errors
+	 */
+	if (ioctl(frontend_fd, FE_READ_SIGNAL_STRENGTH, &signal) == -1)
+		signal = -2;
+	if (ioctl(frontend_fd, FE_READ_SNR, &snr) == -1)
+		snr = -2;
+	if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1)
+		ber = -2;
+	if (ioctl(frontend_fd, FE_READ_UNCORRECTED_BLOCKS, &uncorrected_blocks) == -1)
+		uncorrected_blocks = -2;
+	printf ("status %s | signal %3u%% | snr %2.1f db | ber %d | unc %d | ",
+			(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", (signal * 100) / 0xffff, (snr / 2560.0), ber, uncorrected_blocks);
 	if (status & FE_HAS_LOCK)
 		printf("FE_HAS_LOCK \n");
 	printf("\n");
@@ -152,13 +102,13 @@ int tune(int frontend_fd, struct tune_p *t)
 		{ .cmd = DTV_FREQUENCY,			.u.data = t->freq * 1000 },
 		{ .cmd = DTV_VOLTAGE,			.u.data = t->voltage },
 		{ .cmd = DTV_SYMBOL_RATE,		.u.data = t->sr * 1000},
-		{ .cmd = DTV_TONE,			.u.data = t->tone },
+		{ .cmd = DTV_TONE,				.u.data = t->tone },
 		{ .cmd = DTV_MODULATION,		.u.data = t->modulation },
 		{ .cmd = DTV_INNER_FEC,			.u.data = t->fec },
 		{ .cmd = DTV_INVERSION,			.u.data = t->inversion },
 		{ .cmd = DTV_ROLLOFF,			.u.data = t->rolloff },
 		{ .cmd = DTV_BANDWIDTH_HZ,		.u.data = 0 },
-		{ .cmd = DTV_PILOT,			.u.data = t->pilot },
+		{ .cmd = DTV_PILOT,				.u.data = t->pilot },
 		{ .cmd = DTV_DVBS2_MIS_ID,		.u.data = t->mis },
 		{ .cmd = DTV_TUNE },
 	};
@@ -166,16 +116,16 @@ int tune(int frontend_fd, struct tune_p *t)
 		.num = 13,
 		.props = p_tune
 	};
-	
+
 	printf("\nTuning specs: \n");
-    	printf("System:     %s \n", value2name(p_tune[0].u.data, dvb_system));
+    printf("System:     %s \n", value2name(p_tune[0].u.data, dvb_system));
 	printf("Frequency:  %d %s %d \n", abs(p_tune[1].u.data/1000 + t->LO), value2name(p_tune[2].u.data, dvb_voltage) , p_tune[3].u.data / 1000);
 	printf("22khz:      %s \n", value2name(p_tune[4].u.data, dvb_tone));
 	printf("Modulation: %s \n", value2name(p_tune[5].u.data, dvb_modulation));
 	printf("FEC:        %s \n", value2name(p_tune[6].u.data, dvb_fec));
 	printf("Inversion:  %s \n", value2name(p_tune[7].u.data, dvb_inversion));
 	printf("Rolloff:    %s \n", value2name(p_tune[8].u.data, dvb_rolloff));
-	printf("Pilot:      %s %d \n", value2name(p_tune[10].u.data, dvb_pilot),p_tune[10].u.data);
+	printf("Pilot:      %s \n", value2name(p_tune[10].u.data, dvb_pilot));
 	printf("MIS:        %d \n\n", p_tune[11].u.data);
 
 	if (ioctl(frontend_fd, FE_SET_PROPERTY, &cmdseq_tune) == -1) {
@@ -203,38 +153,38 @@ int tune(int frontend_fd, struct tune_p *t)
 			return;
 		}
 
-		if (status & FE_HAS_LOCK)
+		if (status & FE_HAS_LOCK || status & FE_TIMEDOUT)
 			break;
 		else
 			sleep(1);
 	}
 
-	if (status & FE_HAS_LOCK)
-	{
-		struct dtv_property p[] = {
-			{ .cmd = DTV_DELIVERY_SYSTEM },
-			{ .cmd = DTV_FREQUENCY },
-			{ .cmd = DTV_VOLTAGE },
-			{ .cmd = DTV_SYMBOL_RATE },
-			{ .cmd = DTV_TONE },
-			{ .cmd = DTV_MODULATION },
-			{ .cmd = DTV_INNER_FEC },
-			{ .cmd = DTV_INVERSION },
-			{ .cmd = DTV_ROLLOFF },
-			{ .cmd = DTV_BANDWIDTH_HZ },
-			{ .cmd = DTV_PILOT },
-			{ .cmd = DTV_DVBS2_MIS_ID }
-		};
+	struct dtv_property p[] = {
+		{ .cmd = DTV_DELIVERY_SYSTEM },
+		{ .cmd = DTV_FREQUENCY },
+		{ .cmd = DTV_VOLTAGE },
+		{ .cmd = DTV_SYMBOL_RATE },
+		{ .cmd = DTV_TONE },
+		{ .cmd = DTV_MODULATION },
+		{ .cmd = DTV_INNER_FEC },
+		{ .cmd = DTV_INVERSION },
+		{ .cmd = DTV_ROLLOFF },
+		{ .cmd = DTV_BANDWIDTH_HZ },
+		{ .cmd = DTV_PILOT },
+		{ .cmd = DTV_DVBS2_MIS_ID }
+	};
 
-		struct dtv_properties p_status = {
-			.num = 12,
-			.props = p
-		};
-		// get the actual parameters from the driver for that channel
-		if ((ioctl(frontend_fd, FE_GET_PROPERTY, &p_status)) == -1) {
-			perror("FE_GET_PROPERTY failed");
-			return -1;
-		}
+	struct dtv_properties p_status = {
+		.num = 12,
+		.props = p
+	};
+
+	// get the actual parameters from the driver for that channel
+	if ((ioctl(frontend_fd, FE_GET_PROPERTY, &p_status)) == -1) {
+		perror("FE_GET_PROPERTY failed");
+		return -1;
+	}
+
 		int m,num,den;
   		double fec_result;
 		double bw;
@@ -269,28 +219,24 @@ int tune(int frontend_fd, struct tune_p *t)
   		printf("Bandwidth:  %3.4f MHz \n", bw);
   		printf("Data Rate:  %3.4f Mbps \n\n", dr);
 
-		char c;
-		do
-		{
-			check_frontend(frontend_fd);
-			c = getch();
+	char c;
+	do
+	{
+		check_frontend(frontend_fd);
+		c = getch();
 //			sleep(1);
 //	                if ( kbhit() )
 //        	                c = kbgetchar(); /* consume the character */
-			switch ( c ) {
-				case 'e':
-					motor_dir(frontend_fd, 0);
-					break;
-				case 'w':
-					motor_dir(frontend_fd, 1);
-					break;
-			}
-		} while(c != 'q');
-		return 0;
-	} else {
-		printf(">>> tuning failed!!!\n");
-		return -1;
-	}
+		switch ( c ) {
+			case 'e':
+				motor_dir(frontend_fd, 0);
+				break;
+			case 'w':
+				motor_dir(frontend_fd, 1);
+				break;
+		}
+	} while(c != 'q');
+	return 0;
 }
 
 char *usage =
