@@ -47,25 +47,72 @@ char * value2name(int value, struct options *table)
 int check_frontend (int frontend_fd)
 {
 	fe_status_t status;
-	uint16_t snr, signal;
-	uint32_t ber, uncorrected_blocks;
+	uint32_t uncorrected_blocks;
+	double ber;
+	unsigned int ber_scale;
+	float snr;
+	unsigned int snr_scale;
+	float lvl;
+	unsigned int lvl_scale;
+	
+	if (ioctl(frontend_fd, FE_READ_STATUS, &status) == -1) {
+		perror("FE_READ_STATUS failed"); 
+	}
 
-	if (ioctl(frontend_fd, FE_READ_STATUS, &status) == -1)
-		perror("FE_READ_STATUS failed");
+	struct dtv_property p[7];
+	p[0].cmd = DTV_STAT_SIGNAL_STRENGTH;
+	p[1].cmd = DTV_STAT_CNR;
+	p[2].cmd = DTV_STAT_PRE_ERROR_BIT_COUNT;
+	p[3].cmd = DTV_STAT_PRE_TOTAL_BIT_COUNT;
+	p[4].cmd = DTV_STAT_POST_ERROR_BIT_COUNT;
+	p[5].cmd = DTV_STAT_POST_TOTAL_BIT_COUNT;
+	p[6].cmd = DTV_STAT_ERROR_BLOCK_COUNT;
+	p[7].cmd = DTV_STAT_TOTAL_BLOCK_COUNT;
 
-	/* some frontends might not support all these ioctls, thus we
-	 * avoid printing errors
-	 */
-	if (ioctl(frontend_fd, FE_READ_SIGNAL_STRENGTH, &signal) == -1)
-		signal = -2;
-	if (ioctl(frontend_fd, FE_READ_SNR, &snr) == -1)
-		snr = -2;
-	if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1)
-		ber = -2;
-	if (ioctl(frontend_fd, FE_READ_UNCORRECTED_BLOCKS, &uncorrected_blocks) == -1)
-		uncorrected_blocks = -2;
-	printf ("status %s | signal %3u%% | snr %2.1f db | ber %d | unc %d | ",
-			(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", (signal * 100) / 0xffff, (snr / 2560.0), ber, uncorrected_blocks);
+	struct dtv_properties p_status;
+	p_status.num = 8;
+	p_status.props = p;
+
+	if (ioctl(frontend_fd, FE_GET_PROPERTY, &p_status) == -1) {
+		perror("FE_GET_PROPERTY failed");
+		return;
+	}
+		
+	lvl_scale = p_status.props[0].u.st.stat[0].scale;
+	if (lvl_scale == FE_SCALE_DECIBEL) {
+		lvl = p_status.props[0].u.st.stat[0].svalue * 0.0001;
+	} else {
+		int lvl;
+		if (ioctl(frontend_fd, FE_READ_SIGNAL_STRENGTH, &lvl) == -1) {
+			lvl = 0;
+		} else {
+			lvl = (lvl * 100) / 0xffff;
+			if (lvl < 0) {
+				lvl = 0;
+			}
+		}
+	}
+	snr_scale = p_status.props[1].u.st.stat[0].scale;
+	if (snr_scale == FE_SCALE_DECIBEL) {
+		snr = p_status.props[1].u.st.stat[0].svalue * .0001;
+	} else {
+		unsigned int snr = 0;
+		if (ioctl(frontend_fd, FE_READ_SNR, &snr) == -1) {
+			snr = 0;
+		}
+	}
+	ber_scale = p_status.props[2].u.st.stat[0].scale;
+	if (ber_scale != FE_SCALE_NOT_AVAILABLE && p_status.props[3].u.st.stat[0].scale != FE_SCALE_NOT_AVAILABLE) {
+		ber = (double)(p_status.props[2].u.st.stat[0].uvalue / (p_status.props[3].u.st.stat[0].uvalue )) * 100;
+        	uncorrected_blocks = (p_status.props[7].u.st.stat[0].uvalue);
+	} else {
+		ber = 0;
+		if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1) {
+			ber = 0;
+		}
+	}
+	printf ("status %s |signal %2.1f dBm | snr %2.1f dB | ber %2.1f | ucb %zu | ",
+		(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", lvl, snr, ber, uncorrected_blocks);
 	if (status & FE_HAS_LOCK)
 		printf("FE_HAS_LOCK \n");
 	printf("\n");
