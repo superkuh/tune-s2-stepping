@@ -47,8 +47,7 @@ char * value2name(int value, struct options *table)
 int check_frontend (int frontend_fd)
 {
 	fe_status_t status;
-	uint32_t uncorrected_blocks;
-	double ber;
+	uint32_t ber;
 	unsigned int ber_scale;
 	float snr;
 	unsigned int snr_scale;
@@ -59,18 +58,13 @@ int check_frontend (int frontend_fd)
 		perror("FE_READ_STATUS failed"); 
 	}
 
-	struct dtv_property p[7];
+	struct dtv_property p[2];
 	p[0].cmd = DTV_STAT_SIGNAL_STRENGTH;
 	p[1].cmd = DTV_STAT_CNR;
-	p[2].cmd = DTV_STAT_PRE_ERROR_BIT_COUNT;
-	p[3].cmd = DTV_STAT_PRE_TOTAL_BIT_COUNT;
-	p[4].cmd = DTV_STAT_POST_ERROR_BIT_COUNT;
-	p[5].cmd = DTV_STAT_POST_TOTAL_BIT_COUNT;
-	p[6].cmd = DTV_STAT_ERROR_BLOCK_COUNT;
-	p[7].cmd = DTV_STAT_TOTAL_BLOCK_COUNT;
+	p[2].cmd = DTV_STAT_POST_ERROR_BIT_COUNT;
 
 	struct dtv_properties p_status;
-	p_status.num = 8;
+	p_status.num = 3;
 	p_status.props = p;
 
 	if (ioctl(frontend_fd, FE_GET_PROPERTY, &p_status) == -1) {
@@ -102,17 +96,16 @@ int check_frontend (int frontend_fd)
 		}
 	}
 	ber_scale = p_status.props[2].u.st.stat[0].scale;
-	if (ber_scale != FE_SCALE_NOT_AVAILABLE && p_status.props[3].u.st.stat[0].scale != FE_SCALE_NOT_AVAILABLE) {
-		ber = (double)(p_status.props[2].u.st.stat[0].uvalue / (p_status.props[3].u.st.stat[0].uvalue )) * 100;
-        	uncorrected_blocks = (p_status.props[7].u.st.stat[0].uvalue);
+	if (ber_scale == FE_SCALE_COUNTER) {
+		ber = p_status.props[2].u.st.stat[0].uvalue;
 	} else {
 		ber = 0;
 		if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1) {
 			ber = 0;
 		}
 	}
-	printf ("status %s |signal %2.1f dBm | snr %2.1f dB | ber %2.1f | ucb %zu | ",
-		(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", lvl, snr, ber, uncorrected_blocks);
+	printf ("status %s | signal %2.1f dBm | snr %2.1f dB | ber %zu | ",
+		(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", lvl, snr, ber);
 	if (status & FE_HAS_LOCK)
 		printf("FE_HAS_LOCK \n");
 	printf("\n");
