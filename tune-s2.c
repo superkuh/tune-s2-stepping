@@ -58,7 +58,7 @@ int check_frontend (int frontend_fd)
 		perror("FE_READ_STATUS failed"); 
 	}
 
-	struct dtv_property p[2];
+	struct dtv_property p[3];
 	p[0].cmd = DTV_STAT_SIGNAL_STRENGTH;
 	p[1].cmd = DTV_STAT_CNR;
 	p[2].cmd = DTV_STAT_POST_ERROR_BIT_COUNT;
