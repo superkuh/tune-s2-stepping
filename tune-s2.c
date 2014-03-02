@@ -257,8 +257,58 @@ int tune(int frontend_fd, struct tune_p *t)
 		else	printf("Pilot:      OFF %d \n",p_status.props[10].u.data);
 		printf("MIS:        %d \n", p_status.props[11].u.data);
   		printf("Bandwidth:  %3.4f MHz \n", bw);
-  		printf("Data Rate:  %3.4f Mbps \n\n", dr);
+  		printf("Data Rate:  %3.4f Mbps \n", dr);
 
+// create a numerical representation of modcode 
+		uint32_t current_modcode;
+		current_modcode=(p_status.props[0].u.data << 8) + (p_status.props[5].u.data << 4)  + (p_status.props[6].u.data);
+//		printf("Modcode: %03x \n", current_modcode);
+// cn failure table, data from http://www.satbroadcasts.com/news,81,Minimum_carrier_to_noise_ratio_values_CNR,_CN_for_DVB_S2_system.html
+// and http://www.satbroadcasts.com/news,79,Minimum_carrier_to_noise_ratio_values_CNR,_CN_for_DVB_S_system.html
+
+		typedef struct { float cn; uint32_t modcode; } cn_failure_t;
+		cn_failure_t cn[30] =
+		{
+			{ 2.7,	0x501 }, // S1 qpsk 1/2
+			{ 4.4,	0x502 }, // S1 qpsk 2/3
+			{ 5.5,	0x503 }, // S1 qpsk 3/4
+			{ 6.5,	0x505 }, // S1 qpsk 5/6
+			{ 7.2,	0x507 }, // S1 qpsk 7/8
+			{ 1.0,	0x601 }, // S2 qpsk 1/2
+			{ 2.2,	0x60A }, // S2 qpsk 3/5
+			{ 3.1,	0x602 }, // S2 qpsk 2/3
+			{ 4.0,	0x603 }, // S2 qpsk 3/4
+			{ 4.6,	0x604 }, // S2 qpsk 4/5
+			{ 5.2,	0x605 }, // S2 qpsk 5/6
+			{ 6.2,	0x608 }, // S2 qpsk 8/9
+			{ 6.5,	0x60B }, // S2 qpsk 9/10
+			{ 5.5,	0x69A }, // S2 8psk 3/5
+			{ 6.6,	0x692 }, // S2 8psk 2/3
+			{ 7.9,	0x693 }, // S2 8psk 3/4
+			{ 9.45,	0x695 }, // S2 8psk 5/6
+			{ 10.7,	0x698 }, // S2 8psk 8/9
+			{ 11.0,	0x69B }, // S2 8psk 9/10
+			{ 9.0,	0x6A2 }, // S2 16APSK 2/3
+			{ 10.2,	0x6A3 }, // S2 16APSK 3/4
+			{ 11.0,	0x6A4 }, // S2 16APSK 4/5
+			{ 11.6,	0x6A5 }, // S2 16APSK 5/6
+			{ 12.9,	0x6A8 }, // S2 16APSK 8/9
+			{ 13.1,	0x6AB }, // S2 16APSk 9/10
+			{ 12.6,	0x6B3 }, // S2 32APSK 3/4
+			{ 13.6,	0x6B4 }, // S2 32APSK 4/5
+			{ 14.3,	0x6B5 }, // S2 32APSK 5/6
+			{ 15.7,	0x6B8 }, // S2 32APSK 8/9
+			{ 16.1,	0x6BB }  // S2 32APSK 9/10
+		};
+// based on the current modcode (system, modulation, fec) print the cn failure point
+		int j;
+		for (j = 0; j < 30; j++)
+		{
+			if(current_modcode == cn[j].modcode) {  
+				printf("CN Failure: %2.1f dB \n\n", cn[j].cn);
+		}
+			else ;
+		}
 	char c;
 	do
 	{
