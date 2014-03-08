@@ -106,9 +106,9 @@ int check_frontend (int frontend_fd)
 	}
 	printf ("status %s | signal %2.1f dBm | snr %2.1f dB | ber %u | ",
 		(status & FE_HAS_LOCK) ? "Locked" : "Unlocked", lvl, snr, ber);
-	if (status & FE_HAS_LOCK)
+	if (status & FE_HAS_LOCK) {
 		printf("FE_HAS_LOCK \n");
-//	printf("\n");
+ 	} else printf("\n");
 
 	return 0;
 }
