@@ -115,6 +115,30 @@ void motor_dir(int frontend_fd, int dir)
 	usleep(20000);
 }
 
+void motor_gotox(int frontend_fd, int pmem)
+{
+	struct dvb_diseqc_master_cmd gotox_cmd = { { 0xe0, 0x31, 0x6B, pmem, 0x00, 0x00 }, 4 };
+	sleep(1);
+	diseqc_send_msg(frontend_fd, gotox_cmd);
+	printf("Waiting for motor to move, either wait 45sec or hit 's' to skip\n");
+    int c;
+    int sec = time(NULL);
+    set_conio_terminal_mode();
+    do {
+		sleep(1);
+		if ( kbhit() )
+	   		c = kbgetchar(); /* consume the character */
+    } while( (char)c != 's' && sec+45 > time(NULL) );
+	reset_terminal_mode();
+}
+
+void motor_gotox_save(int frontend_fd, int pmem)
+{
+	struct dvb_diseqc_master_cmd gotox_save_cmd = { { 0xe0, 0x31, 0x6A, pmem, 0x00, 0x00 }, 4 };
+	diseqc_send_msg(frontend_fd, gotox_save_cmd);
+	usleep(20000);
+}
+
 void diseqc_send_msg(int frontend_fd, struct dvb_diseqc_master_cmd cmd)
 {
 	printf("DiSEqC: %02x %02x %02x %02x %02x %02x length: %d\n",
