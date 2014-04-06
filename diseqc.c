@@ -127,7 +127,7 @@ void diseqc_send_msg(int frontend_fd, struct dvb_diseqc_master_cmd cmd)
 	usleep(20000);
 }
 
-void setup_switch (int frontend_fd, fe_sec_voltage_t voltage, fe_sec_tone_mode_t tone, int committed, int uncommitted)
+void setup_switch (int frontend_fd, fe_sec_voltage_t voltage, fe_sec_tone_mode_t tone, int committed, int uncommitted, int servo)
 {
 	if (tone)
 		printf("22khz OFF\n");
@@ -140,14 +140,12 @@ void setup_switch (int frontend_fd, fe_sec_voltage_t voltage, fe_sec_tone_mode_t
 
 	if (ioctl(frontend_fd, FE_SET_VOLTAGE, voltage) == -1)
 		perror("FE_SET_VOLTAGE ERROR!");
-	usleep(20000);
-
+	usleep(servo*1000);
+	
 	if (uncommitted)
-		usleep(20000);
 		diseqc_send_msg(frontend_fd, uncommitted_switch_cmds[uncommitted-1]);
 
 	if (committed)
-		usleep(20000);
 		diseqc_send_msg(frontend_fd, committed_switch_cmds[committed-1]);
 
 	if (ioctl(frontend_fd, FE_SET_TONE, tone) == -1)

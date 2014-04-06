@@ -336,6 +336,7 @@ char *usage =
 	"	-2             : use 22khz tone\n"
 	"	-committed N   : use DiSEqC COMMITTED switch position N (1-4)\n"
 	"	-uncommitted N : use DiSEqC uncommitted switch position N (1-4)\n"
+	"	-servo N       : servo delay in milliseconds (default 20)\n"
 	"	-usals N.N     : orbital position\n"
 	"	-long N.N      : site long\n"
 	"	-lat N.N       : site lat\n"
@@ -370,6 +371,7 @@ int main(int argc, char *argv[])
 	int adapter = 0, frontend = 0;
 	int committed	= 0;
 	int uncommitted	= 0;
+	int servo = 0;
 
 	double site_lat		= 0;
 	double site_long	= 0;
@@ -401,6 +403,8 @@ int main(int argc, char *argv[])
 			committed = strtoul(argv[a+1], NULL, 0);
 		if ( !strcmp(argv[a], "-uncommitted") )
 			uncommitted = strtoul(argv[a+1], NULL, 0);
+		if ( !strcmp(argv[a], "-servo") )
+			servo = strtoul(argv[a+1], NULL, 20);
 		if ( !strcmp(argv[a], "-usals") )
 			sat_long = strtod(argv[a+1], NULL);
 		if ( !strcmp(argv[a], "-long") )
@@ -475,7 +479,7 @@ int main(int argc, char *argv[])
 	if (sat_long)
 		motor_usals(frontend_fd, site_lat, site_long, sat_long);
 	if (!t.tone || committed || uncommitted)
-		setup_switch (frontend_fd, t.voltage, t.tone, committed, uncommitted);
+		setup_switch (frontend_fd, t.voltage, t.tone, committed, uncommitted, servo);
 
 	tune(frontend_fd, &t);
 
