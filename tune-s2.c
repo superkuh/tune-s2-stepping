@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
 	int adapter = 0, frontend = 0;
 	int committed	= 0;
 	int uncommitted	= 0;
-	int servo = 0;
+	int servo = 20;
 
 	double site_lat		= 0;
 	double site_long	= 0;
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
 		if ( !strcmp(argv[a], "-uncommitted") )
 			uncommitted = strtoul(argv[a+1], NULL, 0);
 		if ( !strcmp(argv[a], "-servo") )
-			servo = strtoul(argv[a+1], NULL, 20);
+			servo = strtoul(argv[a+1], NULL, 0);
 		if ( !strcmp(argv[a], "-usals") )
 			sat_long = strtod(argv[a+1], NULL);
 		if ( !strcmp(argv[a], "-long") )
