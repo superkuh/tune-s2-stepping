@@ -143,9 +143,11 @@ void setup_switch (int frontend_fd, fe_sec_voltage_t voltage, fe_sec_tone_mode_t
 	usleep(20000);
 
 	if (uncommitted)
+		usleep(20000);
 		diseqc_send_msg(frontend_fd, uncommitted_switch_cmds[uncommitted-1]);
 
 	if (committed)
+		usleep(20000);
 		diseqc_send_msg(frontend_fd, committed_switch_cmds[committed-1]);
 
 	if (ioctl(frontend_fd, FE_SET_TONE, tone) == -1)
