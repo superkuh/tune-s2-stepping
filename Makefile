@@ -1,5 +1,3 @@
-CC=gcc
-
 SRC=kb.c diseqc.c tune-s2.c
 HED=kb.h diseqc.h tune-s2.h
 OBJ=kb.o diseqc.o tune-s2.o
