@@ -324,6 +324,12 @@ int tune(int frontend_fd, struct tune_p *t)
 			case 'w':
 				motor_dir(frontend_fd, 1);
 				break;
+			case 's':{
+				int pmem = 0;
+				printf ("enter a position no. to save: ");
+				scanf("%d", &pmem);
+				motor_gotox_save(frontend_fd, pmem);
+				break; }
 		}
 	} while(c != 'q');
 	return 0;
@@ -336,7 +342,8 @@ char *usage =
 	"	-2             : use 22khz tone\n"
 	"	-committed N   : use DiSEqC COMMITTED switch position N (1-4)\n"
 	"	-uncommitted N : use DiSEqC uncommitted switch position N (1-4)\n"
-	"	-servo N       : servo delay in milliseconds (default 20)\n"
+	"	-servo N       : servo delay in milliseconds (20-1000, default 20)\n"
+	"	-gotox NN      : Drive Motor to Satellite Position NN (0-99)\n"
 	"	-usals N.N     : orbital position\n"
 	"	-long N.N      : site long\n"
 	"	-lat N.N       : site lat\n"
@@ -372,6 +379,7 @@ int main(int argc, char *argv[])
 	int committed	= 0;
 	int uncommitted	= 0;
 	int servo = 20;
+	int pmem = 0;
 
 	double site_lat		= 0;
 	double site_long	= 0;
@@ -405,6 +413,8 @@ int main(int argc, char *argv[])
 			uncommitted = strtoul(argv[a+1], NULL, 0);
 		if ( !strcmp(argv[a], "-servo") )
 			servo = strtoul(argv[a+1], NULL, 0);
+		if ( !strcmp(argv[a], "-gotox") )
+			pmem = strtoul(argv[a+1], NULL, 0);
 		if ( !strcmp(argv[a], "-usals") )
 			sat_long = strtod(argv[a+1], NULL);
 		if ( !strcmp(argv[a], "-long") )
@@ -475,12 +485,18 @@ int main(int argc, char *argv[])
 		t.LO = lnb.low;
 		t.freq = abs(t.freq - abs(t.LO));;
 	}
-
+	if(servo >= 1000) {
+		servo = 1000; 
+	} else if(servo <= 20) {
+		servo = 20;
+	}
 	if (sat_long)
 		motor_usals(frontend_fd, site_lat, site_long, sat_long);
 	if (!t.tone || committed || uncommitted)
 		setup_switch (frontend_fd, t.voltage, t.tone, committed, uncommitted, servo);
 
+	if(pmem)
+		motor_gotox(frontend_fd, pmem);
 	tune(frontend_fd, &t);
 
 	printf("Closing frontend ... \n");

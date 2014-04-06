@@ -37,3 +37,5 @@ extern void motor_usals(int frontend_fd, double site_lat, double site_long, doub
 extern double radian( double number );
 extern double degree( double number );
 extern void motor_dir(int frontend_fd, int dir);
+extern void motor_gotox(int frontend_fd, int pmem);
+extern void motor_gotox_save(int frontend_fd, int pmem);
