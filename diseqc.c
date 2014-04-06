@@ -125,7 +125,6 @@ void motor_gotox(int frontend_fd, int pmem)
     int sec = time(NULL);
     set_conio_terminal_mode();
     do {
-		sleep(1);
 		if ( kbhit() )
 	   		c = kbgetchar(); /* consume the character */
     } while( (char)c != 's' && sec+45 > time(NULL) );
