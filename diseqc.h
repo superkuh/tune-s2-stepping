@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <linux/dvb/frontend.h>
-#include <time.h>
 
 #include "kb.h"
 
