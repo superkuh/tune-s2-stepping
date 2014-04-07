@@ -93,7 +93,6 @@ void motor_usals(int frontend_fd, double site_lat, double site_long, double sat_
 
 	struct dvb_diseqc_master_cmd usals_cmd = { { 0xe0, 0x31, 0x6e, angle_1, angle_2, 0x00 }, 5 };
 
-	sleep(1);
 	diseqc_send_msg(frontend_fd, usals_cmd);
 
 	printf("Waiting for motor to move, either wait 45sec or hit 's' to skip\n");
@@ -118,7 +117,6 @@ void motor_dir(int frontend_fd, int dir)
 void motor_gotox(int frontend_fd, int pmem)
 {
 	struct dvb_diseqc_master_cmd gotox_cmd = { { 0xe0, 0x31, 0x6B, pmem, 0x00, 0x00 }, 4 };
-	sleep(1);
 	diseqc_send_msg(frontend_fd, gotox_cmd);
 	printf("Waiting for motor to move, either wait 45sec or hit 's' to skip\n");
     int c;
