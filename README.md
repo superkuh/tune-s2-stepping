@@ -10,18 +10,18 @@ difference is that my copy will never try to tune the DVB card/LNB.
 
 Usage is pretty simple. The only differences being two new cli switches.
 
--step-east 
--step-west
+<pre>-step-east 
+-step-west</pre>
 
 They each take any value from 0 to 10 like, 
 
-./tune-s2 12224 V 20000 -2 -step-west 0 -committed 1
+<pre>./tune-s2 12224 V 20000 -2 -step-west 0 -committed 1</pre>
 
 This would cause the satellite dish motor on port 1 of the Diseqc switch to step 1 position counter-clockwise.
 
 The stepping argument values 0 through 10 are mapped on a fairly arbitrary set of actual steps,
 
-0->1
+<pre>0->1
 1->2
 2->3
 3->4
@@ -31,12 +31,12 @@ The stepping argument values 0 through 10 are mapped on a fairly arbitrary set o
 7->30
 8->40
 9->50
-10->100
+10->100</pre>
 
 And yeah, for now you have to include the "12224 V 20000" stuff even though software never uses it. Here's the usage
 for the original program:
 
-usage: tune-s2 12224 V 20000 [options]
+<pre>usage: tune-s2 12224 V 20000 [options]
 	-adapter N     : use given adapter (default 0)
 	-frontend N    : use given frontend (default 0)
 	-2             : use 22khz tone
@@ -55,4 +55,4 @@ usage: tune-s2 12224 V 20000 [options]
 	-inversion N   : spectral inversion (OFF / ON / AUTO [default])
 	-pilot N	   : pilot (OFF / ON / AUTO [default])
 	-mis N   	   : MIS #
-	-help          : help
+	-help          : help</pre>
