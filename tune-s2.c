@@ -22,8 +22,16 @@
 
 #include "tune-s2.h"
 
-#if DVB_API_VERSION < 5
-#error tune-s2 requires Linux DVB driver API version 5.0 or newer!
+#if DVB_API_VERSION < 5 || DVB_API_VERSION_MINOR < 2
+#error szap-s2 requires Linux DVB driver API version 5.2 and newer!
+#endif
+
+#ifndef DTV_STREAM_ID
+	#define DTV_STREAM_ID DTV_ISDBS_TS_ID
+#endif
+
+#ifndef NO_STREAM_ID_FILTER
+	#define NO_STREAM_ID_FILTER	(~0U)
 #endif
 
 int name2value(char *name, struct options *table)
@@ -148,8 +156,8 @@ int tune(int frontend_fd, struct tune_p *t)
 		{ .cmd = DTV_INVERSION,			.u.data = t->inversion },
 		{ .cmd = DTV_ROLLOFF,			.u.data = t->rolloff },
 		{ .cmd = DTV_BANDWIDTH_HZ,		.u.data = 0 },
-		{ .cmd = DTV_PILOT,				.u.data = t->pilot },
-		{ .cmd = DTV_DVBS2_MIS_ID,		.u.data = t->mis },
+		{ .cmd = DTV_PILOT,			.u.data = t->pilot },
+		{ .cmd = DTV_STREAM_ID,			.u.data = t->mis },
 		{ .cmd = DTV_TUNE },
 	};
 	struct dtv_properties cmdseq_tune = {
@@ -211,7 +219,7 @@ int tune(int frontend_fd, struct tune_p *t)
 		{ .cmd = DTV_ROLLOFF },
 		{ .cmd = DTV_BANDWIDTH_HZ },
 		{ .cmd = DTV_PILOT },
-		{ .cmd = DTV_DVBS2_MIS_ID }
+		{ .cmd = DTV_STREAM_ID }
 	};
 
 	struct dtv_properties p_status = {
