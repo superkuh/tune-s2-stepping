@@ -15,7 +15,7 @@ Usage is pretty simple. The only differences being two new cli switches.
 
 They each take any value from 0 to 10 like, 
 
-<pre>./tune-s2 12224 V 20000 -2 -step-west 0 -committed 1</pre>
+<pre>./tune-s2 -step-west 0 -committed 1</pre>
 
 This would cause the satellite dish motor on port 1 of the Diseqc switch to step 1 position counter-clockwise.
 
@@ -33,8 +33,7 @@ The stepping argument values 0 through 10 are mapped on a fairly arbitrary set o
 9->50
 10->100</pre>
 
-And yeah, for now you have to include the "12224 V 20000" stuff even though software never uses it. Here's the usage
-for the original program:
+Here's the typical usage options.
 
 <pre>usage: tune-s2 12224 V 20000 [options]
 	-adapter N     : use given adapter (default 0)
