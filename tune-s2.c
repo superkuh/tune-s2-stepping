@@ -405,13 +405,18 @@ int main(int argc, char *argv[])
 	t.inversion	= INVERSION_AUTO;
 	t.pilot		= PILOT_AUTO;
 	t.tone		= SEC_TONE_OFF;
+/*
 	t.freq		= strtoul(argv[1], NULL, 0);
 	t.voltage	= name2value(argv[2], dvb_voltage);
 	t.sr		= strtoul(argv[3], NULL, 0);
+*/ 	/* set static defaults that we'll never use */
+	t.freq		= 12224;
+	t.voltage	= 'V';
+	t.sr		= 20000;
 	t.mis		= -1;
 
 	int a;
-	for( a = 1; a < argc; a++ )
+	for( a = 0; a < argc; a++ )
 	{
 		if ( !strcmp(argv[a], "-adapter") )
 			adapter = strtoul(argv[a+1], NULL, 0);
@@ -463,12 +468,14 @@ int main(int argc, char *argv[])
 			stepping = 1;
 			step_dir = 0;
 			step_size = strtod(argv[a+1], NULL);
+			/* step_size = 0; */
 		}
 		if ( !strcmp(argv[a], "-step-west") )
 		{
 			stepping = 1;
 			step_dir = 1;
 			step_size = strtod(argv[a+1], NULL);
+			/* step_size = 0; */
 		}
 		if ( !strcmp(argv[a], "-help") )
 		{

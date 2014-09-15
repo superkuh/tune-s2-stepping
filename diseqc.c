@@ -44,7 +44,7 @@ struct dvb_diseqc_master_cmd uncommitted_switch_cmds[] = {
 struct dvb_diseqc_master_cmd dir_cmd[] =
 {
 	{ { 0xe0, 0x31, 0x68, 0xFF, 0x00, 0x00 }, 4 }, // Drive Motor East 1 step
-	{ { 0xe0, 0x31, 0x69, 0xFE, 0x00, 0x00 }, 4 }  // Drive Motor West 1 step
+	{ { 0xe0, 0x31, 0x69, 0xFF, 0x00, 0x00 }, 4 }  // Drive Motor West 1 step
 };
 
 struct dvb_diseqc_master_cmd step_east[] =
