@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
 	t.mis		= -1;
 
 	int a;
-	for( a = 4; a < argc; a++ )
+	for( a = 1; a < argc; a++ )
 	{
 		if ( !strcmp(argv[a], "-adapter") )
 			adapter = strtoul(argv[a+1], NULL, 0);
