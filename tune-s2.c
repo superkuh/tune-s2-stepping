@@ -389,6 +389,10 @@ int main(int argc, char *argv[])
 	int servo = 20;
 	int pmem = 0;
 
+	int stepping = 0;
+	int step_dir;
+	int step_size; 
+
 	double site_lat		= 0;
 	double site_long	= 0;
 	double sat_long		= 0;
@@ -453,6 +457,19 @@ int main(int argc, char *argv[])
 			t.pilot = name2value(argv[a+1], dvb_pilot);
 		if ( !strcmp(argv[a], "-mis") )
 			t.mis = strtoul(argv[a+1], NULL, 0);
+
+		if ( !strcmp(argv[a], "-step-east") )
+		{
+			stepping = 1;
+			step_dir = 0;
+			step_size = strtod(argv[a+1], NULL);
+		}
+		if ( !strcmp(argv[a], "-step-west") )
+		{
+			stepping = 1;
+			step_dir = 1;
+			step_size = strtod(argv[a+1], NULL);
+		}
 		if ( !strcmp(argv[a], "-help") )
 		{
 			printf("%s", usage);
@@ -505,7 +522,21 @@ int main(int argc, char *argv[])
 
 	if(pmem)
 		motor_gotox(frontend_fd, pmem);
-	tune(frontend_fd, &t);
+
+	if (stepping) {
+		printf("Attempting to step ... ");
+		if (step_dir == 0) {
+			printf("east.\n");
+			motor_east (frontend_fd, step_size);
+		} else if (step_dir == 1) {
+			printf("west.\n");
+			motor_west (frontend_fd, step_size);
+		}
+	}
+			
+
+	/* Temporarily completely disabling tuning for testing stepping */
+	/* tune(frontend_fd, &t); */
 
 	printf("Closing frontend ... \n");
 	close (frontend_fd);
