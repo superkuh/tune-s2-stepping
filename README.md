@@ -8,7 +8,7 @@ What is great about tune-s2 is that it works with diseqc switches. That way one 
 motors. I have not altered the front-end setup or switch aspects of tune-s2 at all and they can be used normally. The only
 difference is that my copy will never try to tune the DVB card/LNB.
 
-Usage is pretty simple. The only differences being two new cli switches.
+Usage of the modified tune-s2 is pretty simple. The only difference are two new cli switches and not needing to give it tuning parameters.
 
 <pre>-step-east 
 -step-west</pre>
